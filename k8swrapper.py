@@ -1,15 +1,6 @@
-import logging
-import argparse
 import uuid
-from pprint import pprint
-
-
 from kubernetes import client
 from kubernetes import config
-import time
-logging.basicConfig(level=logging.INFO)
-config.load_kube_config()
-
 
 class Kubernetes:
     def __init__(self):
@@ -26,13 +17,13 @@ class Kubernetes:
             all_namespaces.append(ns.metadata.name)
 
         if namespace in all_namespaces:
-            logging.info(f"Namespace {namespace} already exists. Reusing.")
+            print(f"Namespace {namespace} already exists. Reusing.")
         else:
             namespace_metadata = client.V1ObjectMeta(name=namespace)
             self.core_api.create_namespace(
                 client.V1Namespace(metadata=namespace_metadata)
             )
-            logging.info(f"Created namespace {namespace}.")
+            print(f"Created namespace {namespace}.")
 
         return namespace
     @staticmethod
@@ -54,7 +45,7 @@ class Kubernetes:
             name=name,
             image_pull_policy=pull_policy,
             args=[args],
-            command=["python3", "-u", "./shuffler.py"],
+            command=["python3", "-u"],
             ports=[{"containerPort":1111}],
             volume_mounts=[
                 client.V1VolumeMount(
@@ -65,7 +56,7 @@ class Kubernetes:
             resources={"requests":{"cpu":"15"}}
         )
 
-        logging.info(
+        print(
             f"Created container with name: {container.name}, "
             f"image: {container.image} and args: {container.args}"
         )
@@ -96,10 +87,11 @@ class Kubernetes:
 
 class K8SExecutor:
     def __init__(self):
-        self.image = "osama21/osamaor:shuffler"
+        config.load_kube_config()
+        self.image = "osama21/osamaor:latest"
         self.name = "openroad"
         self.pull_policy = "Always"
-        self.namespace = "jobdemonamespace"
+        self.namespace = "frank"
         self.k8s = Kubernetes()
         self.k8s.create_namespace(self.namespace)
         self.nfs_volume = self.k8s.create_volume("nfs-volume", "/home/oreheem/shared","10.128.0.92")
@@ -121,12 +113,3 @@ class K8SExecutor:
     def getJobStatus(self, job_name):
         api_response = self.batch_api.read_namespaced_job_status(job_name, self.namespace)
         return api_response.status
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser("Task Executor")
-    parser.add_argument("input_string", help="Input String", type=str)
-    args = parser.parse_args()
-    executor = K8SExecutor()
-    job_name = executor.runJob("Kubernetes")
-    time.sleep(5)
-    print(executor.getJobStatus(job_name))

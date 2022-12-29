@@ -1,0 +1,11 @@
+read_lef "/home/oreheem/shared/ispd18_test4/ispd18_test4.input.lef"
+read_def "/home/oreheem/shared/ispd18_test4/ispd18_test4.input.def"
+
+set seed 1
+set_global_routing_layer_adjustment * 0.5
+set_global_routing_random -seed $seed
+set_routing_layers -signal Metal1-Metal9
+
+global_route -guide_file  "/home/oreheem/shared/fr_results/out_seed_$seed.guide"
+
+exit

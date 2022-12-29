@@ -1,0 +1,17 @@
+read_lef "/home/oreheem/shared/ispd18_test4/ispd18_test4.input.lef"
+read_def "/home/oreheem/shared/ispd18_test4/ispd18_test4.input.def"
+
+set frseed 1
+set trseed 1
+
+read_guides "/home/oreheem/shared/fr_results/out_seed_${frseed}_sorted.guide"
+set_thread_count 95
+detailed_route -output_drc "/home/oreheem/shared/tr_results/ispd18_test4_out_fr_${frseed}_tr_${trseed}_sorted.outputDRC.rpt" \
+               -or_seed $trseed \
+               -or_k 1 \
+               -bottom_routing_layer Metal1 \
+               -top_routing_layer Metal9 \
+               -droute_end_iter 4 \
+               -verbose 1
+write_def "/home/oreheem/shared/tr_results/out_fr_${frseed}_tr_${trseed}_sorted_routed.def"
+exit

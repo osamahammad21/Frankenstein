@@ -1,5 +1,5 @@
-read_lef "/home/oreheem/shared/ispd18_test4/ispd18_test4.input.lef"
-read_def "/home/oreheem/shared/ispd18_test4/ispd18_test4.input.def"
+read_lef "/home/oreheem/shared/ispd19_test9/ispd19_test9.input.lef"
+read_def "/home/oreheem/shared/ispd19_test9/ispd19_test9.input.def"
 
 set seed 1
 set_global_routing_layer_adjustment * 0.5

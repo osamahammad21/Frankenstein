@@ -53,7 +53,7 @@ class Kubernetes:
                     mount_path="/home/oreheem/shared/"
                 )
             ],
-            resources={"requests":{"cpu":"15"}}
+            resources={"requests":{"cpu":"23"}}
         )
 
         print(

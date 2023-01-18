@@ -43,17 +43,16 @@ CLI.add_argument(
 )
 args = CLI.parse_args()
 
-design='ispd19_test9'
+design='ispd19_test2'
 numSeeds_fr = 50
 winSteps = [100]
 max_hotspot_num = 3 #will depress to 2
-skipSeeds = [43, 20]  # this is already too good solution.
+skipSeeds = []  # this is already too good solution.
 hotspot_th = int(args.hotspot_th[0])
 base_rank = int(args.base_rank[0])  # 0 1 2 3 4. 
 gen = int(args.gen[0])
 shared_dir = "/home/oreheem/shared"
-
-
+prev_patch_seeds = []
 if gen ==1:
     f_gen = open(shared_dir+'/genealogy_%s_th_%s_baseRnk_%s.log'%(design,hotspot_th,base_rank),'w')
 else:
@@ -67,7 +66,7 @@ def init_worker():
 
 def init_setting():
     dbu =0
-    f = open(shared_dir+'/tr_results/out_fr_0_tr_0_sorted_routed.def','r')
+    f = open(shared_dir+'/%s/%s.input.def'%(design, design),'r')
     while True:
         line = f.readline()
         if not line: break
@@ -284,7 +283,7 @@ def Franken_combine(patches, base, idx_cnt):
         t_idx = "%s%s"%(t_idx,i[0])
     f_idx='%02d%02d'%(gen,idx_cnt)
     dName_F = 'F_gen_%s_b_%s_p%s_th_%s_%s.guide'%(gen,base,patch_seeds,hotspot_th,f_idx)
-    fo=open('./tmp/%s'%(dName_F), 'w')
+    fo=open('%s/fr_results/%s'%(shared_dir, dName_F), 'w')
     for patch_num in range(0,len(patches)):
         F_seed = patches[patch_num][0]
         F_nets = patches[patch_num][1]
@@ -298,9 +297,7 @@ def Franken_combine(patches, base, idx_cnt):
             for dName in sorted(dirList):
                 if dName.endswith('_%s.guide'%(F_seed)):
                     dName_patch = dName
-        if not os.path.exists('./tmp/%s'%(dName_patch)):
-            shutil.copy(shared_dir+'/fr_results/%s'%(dName_patch), './tmp/%s'%(dName_patch))
-        f_patch=open('./tmp/%s'%(dName_patch), 'r')
+        f_patch=open(shared_dir+'/fr_results/%s'%(dName_patch), 'r')
         lines = f_patch.readlines()
         f_patch.close()
         flagName = 1
@@ -333,7 +330,6 @@ def Franken_combine(patches, base, idx_cnt):
                 buffer = ''
         if len(buffer) != 0:
             fo.write(buffer)
-        print("Added seed",F_seed)
     if gen == 1:
         # it is from orignal GR sols
         dName_base = 'out_seed_%s_sorted.guide'%(base)
@@ -345,9 +341,8 @@ def Franken_combine(patches, base, idx_cnt):
         for dName in sorted(dirList):
             if dName.endswith('_%s.guide'%(base)):
                 dName_base = dName
-    if not os.path.exists('./tmp/%s'%(dName_base)):
-        shutil.copy(shared_dir+'/fr_results/%s'%(dName_base), './tmp/%s'%(dName_base))
-    f_base=open('./tmp/%s'%(dName_base), 'r')
+    
+    f_base=open(shared_dir+'/fr_results/%s'%(dName_base), 'r')
     lines = f_base.readlines()
     f_base.close()
     
@@ -434,6 +429,44 @@ def compare_set(temp_pairs):
         print("FLAG:",flagDiff)
 
 
+def patchDesign(patches, f_gen, idx_cnt):
+    # method4_del_list = []
+    for i in range(1,len(patches)):
+        del_list = []
+        for ele in patches[i][1]: #for each net
+            for j in range(0,i):
+                if ele in patches[j][1]:
+                    t_pair = [j,ele]
+                    del_list.append(t_pair)
+                    # method4_del_list.append(i)
+
+        for del_ele in del_list:
+            # method 2
+            patches[i][1].remove(del_ele[1])
+    
+    if len(patches)>2:
+        for i in range(2,len(patches)):
+            del patches[i]
+    patch_seeds = ""
+    for i in patches:
+        patch_seeds = patch_seeds +" "+str(i[0])
+    if patch_seeds in prev_patch_seeds:
+        return
+    prev_patch_seeds.append(patch_seeds)    
+    for h_num in range(0,len(patches)):
+        print("GEN %s - hotspot %s patch seed: %s "%(gen, h_num, patches[h_num][0]))
+        print("GEN %s - hotspot %s expected hotspot #DRVs: %s "%(gen, h_num, patches[h_num][2]))
+        print("GEN %s - hotspot %s #nets: %s "%(gen, h_num, len(patches[h_num][1])))
+        f_gen.write("GEN %s - hotspot %s patch seed: %s \n"%(gen, h_num, patches[h_num][0]))
+        f_gen.write("GEN %s - hotspot %s expected hotspot #DRVs: %s \n"%(gen, h_num, patches[h_num][2]))
+        f_gen.write("GEN %s - hotspot %s #nets: %s \n"%(gen, h_num, len(patches[h_num][1])))
+
+    f_idx='%02d%02d'%(gen,idx_cnt)
+    f_gen.write("GEN %s - f_idx %s patch seeds: %s \n"%(gen,f_idx, patch_seeds ))
+    print("GEN %s - f_idx %s patch seeds: %s \n"%(gen,f_idx, patch_seeds ))
+    
+    ## combine base and F_fr to make Frankenstein Guide
+    Franken_combine(patches, base, idx_cnt)
 
 ###
 
@@ -582,74 +615,11 @@ for x in patches_list[0]:
 idx_cnt = 0
 prev_patch_seeds = []
 method4_prev_patch_seeds = []
+
+
+
+print("Patching")
 for patches in guides:
-    #patches --> [[seed1,nets1,cnt1], [seed2, nets2,cnt2]]
-    method4_del_list = []
-    for i in range(1,len(patches)):
-        del_list = []
-        for ele in patches[i][1]: #for each net
-            for j in range(0,i):
-                if ele in patches[j][1]:
-                    t_pair = [j,ele]
-                    del_list.append(t_pair)
-                    method4_del_list.append(i)
-
-        #print(del_list)
-        for del_ele in del_list:
-            #print(del_ele)
-            # method 1
-            #patches[int(del_ele[0])][1].remove(del_ele[1])
-            #patches[i][1].remove(del_ele[1])
-            # method 2
-            patches[i][1].remove(del_ele[1])
-            # method 3
-            #patches[int(del_ele[0])][1].remove(del_ele[1])
-
-    #method 4
-    #method4_del_list = list(set(method4_del_list))
-    #method4_del_list.sort(reverse=True)
-    #for i in method4_del_list:
-    #    del patches[i]
-    #    print("GEN %s - hotspot %s is deleted (now %s becomes %s)"%(gen, i, i+1,i))
-    #    f_gen.write("GEN %s - hotspot %s is deleted "%(gen, i))
-    #if len(patches)>2:
-    #    for i in range(2,len(patches)):
-    #        del patches[i]
-    #patch_seeds = ""
-    #for i in patches:
-    #    patch_seeds = patch_seeds +" "+str(i[0])
-    #if patch_seeds in method4_prev_patch_seeds:
-    #    continue
-    #method4_prev_patch_seeds.append(patch_seeds)
-     ######################################   
-    if len(patches)>2:
-        for i in range(2,len(patches)):
-            del patches[i]
-    patch_seeds = ""
-    for i in patches:
-        patch_seeds = patch_seeds +" "+str(i[0])
-    if patch_seeds==prev_patch_seeds:
-        continue
-    prev_patch_seeds=patch_seeds
-    
-
-    for h_num in range(0,len(patches)):
-        print("GEN %s - hotspot %s patch seed: %s "%(gen, h_num, patches[h_num][0]))
-        print("GEN %s - hotspot %s expected hotspot #DRVs: %s "%(gen, h_num, patches[h_num][2]))
-        print("GEN %s - hotspot %s #nets: %s "%(gen, h_num, len(patches[h_num][1])))
-        f_gen.write("GEN %s - hotspot %s patch seed: %s \n"%(gen, h_num, patches[h_num][0]))
-        f_gen.write("GEN %s - hotspot %s expected hotspot #DRVs: %s \n"%(gen, h_num, patches[h_num][2]))
-        f_gen.write("GEN %s - hotspot %s #nets: %s \n"%(gen, h_num, len(patches[h_num][1])))
-
-    f_idx='%02d%02d'%(gen,idx_cnt)
-    f_gen.write("GEN %s - f_idx %s patch seeds: %s \n"%(gen,f_idx, patch_seeds ))
-    print("GEN %s - f_idx %s patch seeds: %s \n"%(gen,f_idx, patch_seeds ))
-    
-
-    #print("patches:",patches)
-
-    ## combine base and F_fr to make Frankenstein Guide
-    Franken_combine(patches, base, idx_cnt)
-    idx_cnt = idx_cnt + 1
-
+    patchDesign(patches, f_gen, idx_cnt)
+    idx_cnt += 1
 f_gen.close()

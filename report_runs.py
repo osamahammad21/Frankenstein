@@ -3,9 +3,10 @@ import sys
 import re
 import os
 
-gen = 0
+
 
 dirList=os.listdir(sys.argv[1]) 
+gen = sys.argv[3]
 csv = open(sys.argv[2], "w")
 csv.write("seed, violations\n")
 for dName in sorted(dirList):

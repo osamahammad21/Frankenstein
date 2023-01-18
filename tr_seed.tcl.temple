@@ -8,7 +8,7 @@ set input_guides "/home/oreheem/shared/fr_results/out_seed_${frseed}_sorted.guid
 set output_def "/home/oreheem/shared/tr_results/out_fr_${frseed}_tr_${trseed}_sorted_routed.def"
 
 read_guides $input_guides
-set_thread_count 16
+set_thread_count 95
 detailed_route -output_drc $output_drc \
                -or_seed $trseed \
                -or_k 1 \

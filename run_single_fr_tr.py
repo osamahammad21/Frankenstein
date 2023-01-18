@@ -3,7 +3,6 @@ import sys
 
 curDir = os.getcwd()
 shared_dir = '/home/oreheem/shared'
-openroadDir = "/OpenROAD/build/src/"
 seed_fr = 0
 numSeeds_tr = 1
 gen = 1
@@ -30,7 +29,7 @@ if gen == 0:
           line = "set seed {}\n".format(seed_fr)
       fo.write(line)
   fo.close()
-  cmd = '%s/openroad %s/fr_params/run_single_fr_seed_%s.tcl |tee %s/log/log_fr_out_seed_%s.log'%(openroadDir,shared_dir,seed_fr,shared_dir,seed_fr)
+  cmd = 'openroad %s/fr_params/run_single_fr_seed_%s.tcl |tee %s/log/log_fr_out_seed_%s.log'%(shared_dir,seed_fr,shared_dir,seed_fr)
   print(cmd)
   os.system(cmd)
 
@@ -104,6 +103,6 @@ for seed_tr in range(0,numSeeds_tr):
       logName = "%s/log/log_out_fr_%s_tr_%s_sorted.log"%(shared_dir, seed_fr, seed_tr)
     else:
       logName = "%s/log/log_out_gen_%s_p_%s_sorted.log"%(shared_dir, gen, fidx)
-    cmd = "%s/openroad %s |tee %s"%(openroadDir,foName, logName)
+    cmd = "openroad %s |tee %s"%(foName, logName)
     print(cmd)
     os.system(cmd)

@@ -46,14 +46,12 @@ class Kubernetes:
             image_pull_policy=pull_policy,
             args=[args],
             command=["python3", "-u"],
-            ports=[{"containerPort":1111}],
             volume_mounts=[
                 client.V1VolumeMount(
                     name="nfs-volume",
                     mount_path="/home/oreheem/shared/"
                 )
-            ],
-            resources={"requests":{"cpu":"23"}}
+            ]
         )
 
         print(
@@ -66,7 +64,7 @@ class Kubernetes:
     @staticmethod
     def create_pod_template(pod_name, container, volume):
         pod_template = client.V1PodTemplateSpec(
-            spec=client.V1PodSpec(restart_policy="Never", containers=[container], volumes=[volume], host_network=True),
+            spec=client.V1PodSpec(restart_policy="Never", containers=[container], volumes=[volume]),
             metadata=client.V1ObjectMeta(name=pod_name, labels={"pod_name": pod_name}),
         )
 
